@@ -159,6 +159,7 @@ public class Server : MonoBehaviour, INetEventListener
             peer.Send(WritePacket(pj), DeliveryMethod.ReliableOrdered);
         }
     }
+    
     #endregion
 
     private void FixedUpdate()
