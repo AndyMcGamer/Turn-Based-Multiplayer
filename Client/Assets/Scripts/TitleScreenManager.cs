@@ -9,6 +9,12 @@ public class TitleScreenManager : MonoBehaviour
     {
         menuScreens = GameObject.FindGameObjectsWithTag("Screen");
     }
+
+    private void OnEnable()
+    {
+        EventManager.OnLoadConfirmed += ConfirmLoad;
+    }
+
     public void ChangeScreen(string screenName)
     {
         foreach (GameObject screen in menuScreens)
@@ -24,4 +30,13 @@ public class TitleScreenManager : MonoBehaviour
         }
     }
 
+    private void ConfirmLoad()
+    {
+        ChangeScreen("LobbyScreen");
+    }
+
+    private void OnDisable()
+    {
+        EventManager.OnLoadConfirmed -= ConfirmLoad;
+    }
 }

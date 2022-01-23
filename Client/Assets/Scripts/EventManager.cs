@@ -4,12 +4,22 @@ using UnityEngine;
 
 public class EventManager : MonoBehaviour
 {
-    #region EventObjects
+    #region References
+    [SerializeField] private Client client;
     #endregion
 
     #region Events
+    public delegate void EventAction();
+    public static event EventAction OnLoadConfirmed;
     #endregion
 
-    #region EventTriggers
+    #region Event Invokers
+    public static void InvokeLoadConfirmed()
+    {
+        if(OnLoadConfirmed != null)
+        {
+            OnLoadConfirmed();
+        }
+    }
     #endregion
 }

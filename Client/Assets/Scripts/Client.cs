@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 using System.Net;
 using System.Net.Sockets;
@@ -22,12 +23,13 @@ public class Client : MonoBehaviour, INetEventListener
     private string _userName;
     private int _ping;
     private PlayerManager _playerManager;
+    private string ipAddress;
     #endregion
 
     #region NetEvents
     public void OnConnectionRequest(ConnectionRequest request)
     {
-        request.Reject();
+        request.AcceptIfKey(ipAddress);
     }
 
     public void OnNetworkError(IPEndPoint endPoint, SocketError socketError)
@@ -146,6 +148,22 @@ public class Client : MonoBehaviour, INetEventListener
     }
     #endregion
 
+    private void Awake()
+    {
+        
+        IPHostEntry Host = default(IPHostEntry);
+        string Hostname = null;
+        Hostname = Environment.MachineName;
+        Host = Dns.GetHostEntry(Hostname);
+        foreach (IPAddress IP in Host.AddressList)
+        {
+            if (IP.AddressFamily == AddressFamily.InterNetwork)
+            {
+                ipAddress = Convert.ToString(IP);
+            }
+        }
+    }
+
     private void FixedUpdate()
     {
         if(_netManager != null)
@@ -167,6 +185,8 @@ public class Client : MonoBehaviour, INetEventListener
         Debug.Log("[C] Join accept. Received player id: " + packet.Id);
         var clientPlayer = new ClientPlayer(this, _playerManager, _userName, packet.Id);
         _playerManager.AddClientPlayer(clientPlayer);
+
+        EventManager.InvokeLoadConfirmed();
     }
     private void OnPlayerLeft(PlayerLeftPacket packet)
     {
