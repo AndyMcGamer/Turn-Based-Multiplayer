@@ -9,7 +9,7 @@ using System.Net.Sockets;
 public class Server : MonoBehaviour, INetEventListener
 {
     #region NetVars
-    private NetManager _netManager;
+    private NetManager _netManager = null;
     private NetPacketProcessor _packetProcessor;
 
     public const int MaxPlayers = 4;
@@ -84,10 +84,20 @@ public class Server : MonoBehaviour, INetEventListener
     #region Server Startup
     private void Awake()
     {
+        LoadServerData();
         SetupServer();
     }
 
-    public void StartServer()
+    private void LoadServerData()
+    {
+        string[] serverData = System.Environment.GetCommandLineArgs();
+        foreach (var arg in serverData)
+        {
+            Debug.Log(arg);
+        }
+    }
+
+    private void StartServer()
     {
         if (_netManager.IsRunning)
             return;

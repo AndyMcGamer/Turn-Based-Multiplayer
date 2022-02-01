@@ -8,11 +8,13 @@ public class TitleScreenManager : MonoBehaviour
     private void Awake()
     {
         menuScreens = GameObject.FindGameObjectsWithTag("Screen");
+        ChangeScreen("MainScreen");
     }
 
     private void OnEnable()
     {
         EventManager.OnLoadConfirmed += ConfirmLoad;
+        EventManager.ChangeLoad += Load;
     }
 
     public void ChangeScreen(string screenName)
@@ -30,6 +32,11 @@ public class TitleScreenManager : MonoBehaviour
         }
     }
 
+    private void Load()
+    {
+        ChangeScreen("LoadingScreen");
+    }
+
     private void ConfirmLoad()
     {
         ChangeScreen("LobbyScreen");
@@ -38,5 +45,6 @@ public class TitleScreenManager : MonoBehaviour
     private void OnDisable()
     {
         EventManager.OnLoadConfirmed -= ConfirmLoad;
+        EventManager.ChangeLoad -= Load;
     }
 }

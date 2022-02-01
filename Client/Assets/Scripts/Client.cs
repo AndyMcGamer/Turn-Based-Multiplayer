@@ -1,12 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.IO;
 using UnityEngine;
 using System.Net;
 using System.Net.Sockets;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
 
 public class Client : MonoBehaviour, INetEventListener
 {
@@ -146,6 +149,30 @@ public class Client : MonoBehaviour, INetEventListener
         _netManager.Connect(new IPEndPoint(ip, port), "");
         
     }
+
+
+    public void HostGame()
+    {
+        //Start Client
+        StartClient();
+        //Process.Start Server Application
+        EventManager.InvokeChangeLoad();
+        //StartServerApp();
+        StartCoroutine(StartServerCoroutine());
+    }
+
+    private IEnumerator StartServerCoroutine()
+    {
+        yield return null;
+        System.Diagnostics.ProcessStartInfo serverStartInfo = new System.Diagnostics.ProcessStartInfo();
+        serverStartInfo.FileName = CustomSearcher.FindFile("TurnBasedServer.exe");
+        //Send info about client (IP Address and Port)
+        string serverInfoArgs = "";
+        serverInfoArgs += ipAddress + " ";
+        serverStartInfo.Arguments = serverInfoArgs;
+        System.Diagnostics.Process.Start(serverStartInfo);
+    }
+    
     #endregion
 
     private void Awake()
@@ -162,6 +189,7 @@ public class Client : MonoBehaviour, INetEventListener
                 ipAddress = Convert.ToString(IP);
             }
         }
+        _userName = "hello";
     }
 
     private void FixedUpdate()
@@ -172,6 +200,18 @@ public class Client : MonoBehaviour, INetEventListener
         }
         
     }
+
+    #region ClientVar Get/Set
+    public void SetUsername(string name)
+    {
+        _userName = name;
+    }
+
+    public string GetUsername()
+    {
+        return _userName;
+    }
+    #endregion
 
     #region Packet Processing
     private void OnPlayerJoined(PlayerJoinedPacket packet)
@@ -235,5 +275,86 @@ public class Client : MonoBehaviour, INetEventListener
     private void OnDestroy()
     {
         StopClient();
+    }
+}
+public class CustomSearcher
+{
+    public static List<string> GetDirectories(string path, string searchPattern = "*",
+        SearchOption searchOption = SearchOption.AllDirectories)
+    {
+        if (searchOption == SearchOption.TopDirectoryOnly)
+            return Directory.GetDirectories(path, searchPattern).ToList();
+
+        var directories = new List<string>(GetDirectories(path, searchPattern));
+
+        for (var i = 0; i < directories.Count; i++)
+            directories.AddRange(GetDirectories(directories[i], searchPattern));
+
+        return directories;
+    }
+
+    private static List<string> GetDirectories(string path, string searchPattern)
+    {
+        try
+        {
+            return Directory.EnumerateDirectories(path, searchPattern).ToList();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return new List<string>();
+        }
+    }
+    public static string FindFile(string fileName)
+    {
+        string[] drives = Environment.GetLogicalDrives();
+        List<string[]> findedFiles = new List<string[]>();
+        foreach (string dr in drives)
+        {
+            Debug.Log($"Start looking in {dr}");
+            System.IO.DriveInfo di = new System.IO.DriveInfo(dr);
+            if (!di.IsReady)
+            {
+                Debug.Log($"The drive {di.Name} could not be read");
+                continue;
+            }
+            DirectoryInfo rootDir = di.RootDirectory;
+            var findedFiletmp = Directory.GetFiles(rootDir.Name, fileName, SearchOption.TopDirectoryOnly);
+            if (findedFiletmp.Length > 0)
+            {
+                findedFiles.Add(findedFiletmp);
+                Debug.Log("Finded file.Continue search?(Y/N)");
+                
+                
+                
+                break;
+                
+            }
+            var subDirectories = Directory.GetDirectories(rootDir.Name);
+            bool breaked = false;
+            foreach (var subDirectory in subDirectories)
+            {
+                try
+                {
+                    var findedFiletmp1 = Directory.GetFiles(subDirectory, fileName, SearchOption.AllDirectories);
+                    if (findedFiletmp1.Length > 0)
+                    {
+                        findedFiles.Add(findedFiletmp1);
+                        Debug.Log("Finded file.Continue search?(Y/N)");
+                        
+                        breaked = true;
+                        break;
+                        
+                    }
+                }
+                catch (Exception exc)
+                {
+                    Debug.Log(exc.Message);
+                }
+            }
+            Debug.Log($"Finished looking in {dr}");
+            if (breaked)
+                break;
+        }
+        return findedFiles[0][0];
     }
 }
