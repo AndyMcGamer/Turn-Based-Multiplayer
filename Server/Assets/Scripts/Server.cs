@@ -5,6 +5,8 @@ using LiteNetLib;
 using LiteNetLib.Utils;
 using System.Net;
 using System.Net.Sockets;
+using System;
+using System.Globalization;
 
 public class Server : MonoBehaviour, INetEventListener
 {
@@ -12,7 +14,7 @@ public class Server : MonoBehaviour, INetEventListener
     private NetManager _netManager = null;
     private NetPacketProcessor _packetProcessor;
 
-    public const int MaxPlayers = 4;
+    public const int MaxPlayers = 6;
     private readonly NetDataWriter _cachedWriter = new NetDataWriter();
 
     private PlayerManager _playerManager;
@@ -20,11 +22,21 @@ public class Server : MonoBehaviour, INetEventListener
 
     #region ServerVars
     [SerializeField] private string _key = "";
+    private NetPeer _hostClient;
+    private string hostAddress = "";
+    private string hostEndpoint = "";
+
     #endregion
 
     #region NetEvents
     public void OnConnectionRequest(ConnectionRequest request)
     {
+        if (_netManager.ConnectedPeersCount >= MaxPlayers)
+        {
+            request.Reject();
+            Debug.Log(_netManager.ConnectedPeersCount);
+            return;
+        }
         request.AcceptIfKey(_key);
     }
 
@@ -69,14 +81,19 @@ public class Server : MonoBehaviour, INetEventListener
     {
         Debug.Log("[S] Player disconnected: " + disconnectInfo.Reason);
 
-        if (peer.Tag != null)
+        
+        byte playerId = (byte)peer.Id;
+        if (_playerManager.RemovePlayer(playerId))
         {
-            byte playerId = (byte)peer.Id;
-            if (_playerManager.RemovePlayer(playerId))
-            {
-                var plp = new PlayerLeftPacket { Id = (byte)peer.Id };
-                _netManager.SendToAll(WritePacket(plp), DeliveryMethod.ReliableOrdered);
-            }
+            var plp = new PlayerLeftPacket { Id = (byte)peer.Id };
+            _netManager.SendToAll(WritePacket(plp), DeliveryMethod.ReliableOrdered);
+        }
+        
+
+        if(peer == _hostClient)
+        {
+            // Possibly Later: send msg to all other players to connect to backup
+            StopServer();
         }
     }
     #endregion
@@ -90,11 +107,13 @@ public class Server : MonoBehaviour, INetEventListener
 
     private void LoadServerData()
     {
-        string[] serverData = System.Environment.GetCommandLineArgs();
+        string[] serverData = Environment.GetCommandLineArgs();
         foreach (var arg in serverData)
         {
             Debug.Log(arg);
         }
+        hostAddress = serverData[1];
+        hostEndpoint = hostAddress + ":" + serverData[2];
     }
 
     private void StartServer()
@@ -102,7 +121,28 @@ public class Server : MonoBehaviour, INetEventListener
         if (_netManager.IsRunning)
             return;
         _netManager.Start();
-        Debug.Log(_netManager.LocalPort);
+
+        string[] ep = hostEndpoint.Split(':');
+        if (ep.Length != 2)
+        {
+            Debug.Log("Invalid endpoint format");
+            return;
+        }
+        IPAddress ip;
+        if (!IPAddress.TryParse(ep[0], out ip))
+        {
+            Debug.Log("Invalid ip-adress");
+            return;
+        }
+        int port;
+        if (!int.TryParse(ep[1], NumberStyles.None, NumberFormatInfo.CurrentInfo, out port))
+        {
+            Debug.Log("Invalid port");
+            return;
+        }
+
+        Debug.Log("Server started on port " + _netManager.LocalPort);
+        _hostClient = _netManager.Connect(new IPEndPoint(ip, port), hostAddress);
     }
 
     private void SetupServer()
@@ -183,6 +223,7 @@ public class Server : MonoBehaviour, INetEventListener
         {
             _netManager.Stop();
         }
+        Application.Quit();
         
     }
 

@@ -15,6 +15,7 @@ public class TitleScreenManager : MonoBehaviour
     {
         EventManager.OnLoadConfirmed += ConfirmLoad;
         EventManager.ChangeLoad += Load;
+        EventManager.GoToMain += GoToMain;
     }
 
     public void ChangeScreen(string screenName)
@@ -42,9 +43,15 @@ public class TitleScreenManager : MonoBehaviour
         ChangeScreen("LobbyScreen");
     }
 
+    private void GoToMain()
+    {
+        ChangeScreen("MainScreen");
+    }
+
     private void OnDisable()
     {
         EventManager.OnLoadConfirmed -= ConfirmLoad;
         EventManager.ChangeLoad -= Load;
+        EventManager.GoToMain -= GoToMain;
     }
 }

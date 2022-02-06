@@ -79,6 +79,7 @@ public class Client : MonoBehaviour, INetEventListener
     {
         Debug.Log("[C] Disconnected from server: " + disconnectInfo.Reason);
         StopClient();
+        EventManager.InvokeGoToMain();
     }
     #endregion
 
@@ -101,8 +102,13 @@ public class Client : MonoBehaviour, INetEventListener
         _netManager.Start();
     }
 
+    public void ConnectToHost(string endPoint)
+    {
+        StartClient();
+        Connect(endPoint);
+    }
 
-    public void Connect(string endPoint, string key)
+    private void Connect(string endPoint, string key)
     {
         string[] ep = endPoint.Split(':');
         if (ep.Length != 2)
@@ -125,7 +131,7 @@ public class Client : MonoBehaviour, INetEventListener
 
         _netManager.Connect(new IPEndPoint(ip, port), key);
     }
-    public void Connect(string endPoint)
+    private void Connect(string endPoint)
     {
         string[] ep = endPoint.Split(':');
         if (ep.Length != 2)
@@ -150,6 +156,11 @@ public class Client : MonoBehaviour, INetEventListener
         
     }
 
+    public void Disconnect()
+    {
+        StopClient();
+    }
+
 
     public void HostGame()
     {
@@ -158,7 +169,16 @@ public class Client : MonoBehaviour, INetEventListener
         //Process.Start Server Application
         EventManager.InvokeChangeLoad();
         //StartServerApp();
-        StartCoroutine(StartServerCoroutine());
+        try
+        {
+            StartCoroutine(StartServerCoroutine());
+        }
+        catch
+        {
+            Debug.Log("Missing Crucial Files");
+            EventManager.InvokeGoToMain();
+            StopClient();
+        }
     }
 
     private IEnumerator StartServerCoroutine()
@@ -169,6 +189,7 @@ public class Client : MonoBehaviour, INetEventListener
         //Send info about client (IP Address and Port)
         string serverInfoArgs = "";
         serverInfoArgs += ipAddress + " ";
+        serverInfoArgs += _netManager.LocalPort + " ";
         serverStartInfo.Arguments = serverInfoArgs;
         System.Diagnostics.Process.Start(serverStartInfo);
     }
@@ -189,7 +210,7 @@ public class Client : MonoBehaviour, INetEventListener
                 ipAddress = Convert.ToString(IP);
             }
         }
-        _userName = "hello";
+        _userName = "hello" + UnityEngine.Random.Range(0,100);
     }
 
     private void FixedUpdate()
@@ -211,6 +232,11 @@ public class Client : MonoBehaviour, INetEventListener
     {
         return _userName;
     }
+
+    public PlayerManager GetPlayerManager()
+    {
+        return _playerManager;
+    }
     #endregion
 
     #region Packet Processing
@@ -219,6 +245,7 @@ public class Client : MonoBehaviour, INetEventListener
         Debug.Log($"[C] Player joined: {packet.UserName}");
         var remotePlayer = new RemotePlayer(_playerManager, packet.UserName, packet);
         _playerManager.AddPlayer(remotePlayer);
+        EventManager.InvokePlayerListUpdate();
     }
     private void OnJoinAccept(JoinAcceptPacket packet)
     {
@@ -227,10 +254,12 @@ public class Client : MonoBehaviour, INetEventListener
         _playerManager.AddClientPlayer(clientPlayer);
 
         EventManager.InvokeLoadConfirmed();
+        EventManager.InvokePlayerListUpdate();
     }
     private void OnPlayerLeft(PlayerLeftPacket packet)
     {
         var player = _playerManager.RemovePlayer(packet.Id);
+        EventManager.InvokePlayerListUpdate();
         if (player != null)
             Debug.Log($"[C] Player Left: {player.Name}");
     }

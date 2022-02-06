@@ -29,7 +29,7 @@ public class PlayerManager
     private readonly ServerPlayer[] _players;
     private int _playerCount;
 
-    public int Count { get { return Count; } set { Count = _playerCount; } }
+    public int Count { get => _playerCount; }
     #endregion
 
     public PlayerManager(Server server)

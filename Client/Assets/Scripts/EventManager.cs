@@ -12,23 +12,29 @@ public class EventManager : MonoBehaviour
     public delegate void EventAction();
     public static event EventAction OnLoadConfirmed;
     public static event EventAction ChangeLoad;
+    public static event EventAction GoToMain;
+    public static event EventAction OnPlayerListUpdate;
     #endregion
 
     #region Event Invokers
     public static void InvokeLoadConfirmed()
     {
-        if(OnLoadConfirmed != null)
-        {
-            OnLoadConfirmed();
-        }
+        OnLoadConfirmed?.Invoke();
     }
 
     public static void InvokeChangeLoad()
     {
-        if(ChangeLoad != null)
-        {
-            ChangeLoad();
-        }
+        ChangeLoad?.Invoke();
+    }
+
+    public static void InvokeGoToMain()
+    {
+        GoToMain?.Invoke();
+    }
+
+    public static void InvokePlayerListUpdate()
+    {
+        OnPlayerListUpdate?.Invoke();
     }
     #endregion
 }

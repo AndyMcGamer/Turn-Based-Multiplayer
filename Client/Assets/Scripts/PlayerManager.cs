@@ -38,16 +38,23 @@ public class RemotePlayer : Player
 public class PlayerManager
 {
     private readonly Dictionary<byte, Player> _players;
+    private List<byte> _playerIds;
     private readonly Client _client;
     private ClientPlayer _clientPlayer;
 
     public ClientPlayer OurPlayer => _clientPlayer;
-    public int Count { get { return Count; } set { Count = _players.Count; } }
+    public int Count { get => _players.Count; }
+
+    public Player this[int index]
+    {
+        get => (index < _playerIds.Count) ? _players.TryGetValue(_playerIds[index], out var player) ? player : null : null; 
+    }
 
     public PlayerManager(Client client)
     {
         _client = client;
         _players = new Dictionary<byte, Player>();
+        _playerIds = new List<byte>();
     }
 
     public Player GetById(byte id)
@@ -60,6 +67,7 @@ public class PlayerManager
         if (_players.TryGetValue(id, out var player))
         {
             _players.Remove(id);
+            _playerIds.Remove(id);
         }
 
         return player;
@@ -69,12 +77,24 @@ public class PlayerManager
     {
         _clientPlayer = player;
         _players.Add(player.Id, player);
+        _playerIds.Add(player.Id);
     }
 
     public void AddPlayer(RemotePlayer player)
     {
         _players.Add(player.Id, player);
+        _playerIds.Add(player.Id);
     }
+
+    public IEnumerator<Player> GetEnumerator()
+    {
+        foreach (var item in _players.Values)
+        {
+            yield return item;
+        }
+    }
+
+
     public void Clear()
     {
         _players.Clear();
