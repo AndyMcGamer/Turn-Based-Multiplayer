@@ -169,32 +169,50 @@ public class Client : MonoBehaviour, INetEventListener
         //Process.Start Server Application
         EventManager.InvokeChangeLoad();
         //StartServerApp();
-        try
-        {
-            StartCoroutine(StartServerCoroutine());
-        }
-        catch
-        {
-            Debug.Log("Missing Crucial Files");
-            EventManager.InvokeGoToMain();
-            StopClient();
-        }
+        StartCoroutine(StartServerCoroutine());
+        
+        
     }
 
     private IEnumerator StartServerCoroutine()
     {
         yield return null;
         System.Diagnostics.ProcessStartInfo serverStartInfo = new System.Diagnostics.ProcessStartInfo();
-        serverStartInfo.FileName = CustomSearcher.FindFile("TurnBasedServer.exe");
         //Send info about client (IP Address and Port)
         string serverInfoArgs = "";
         serverInfoArgs += ipAddress + " ";
         serverInfoArgs += _netManager.LocalPort + " ";
         serverStartInfo.Arguments = serverInfoArgs;
-        System.Diagnostics.Process.Start(serverStartInfo);
+#if !UNITY_EDITOR
+        serverStartInfo.FileName = Path.GetFullPath(Path.Combine(Path.GetFullPath("."), @"..")) + "\\Server\\TurnBasedServer.exe";
+#else
+        serverStartInfo.FileName = CustomSearcher.FindFile("TurnBasedServer.exe");
+#endif
+        try
+        {
+            System.Diagnostics.Process.Start(serverStartInfo);
+        }
+        catch
+        {
+            try
+            {
+#if !UNITY_EDITOR
+                serverStartInfo.FileName = CustomSearcher.FindFile("TurnBasedServer.exe");
+                System.Diagnostics.Process.Start(serverStartInfo);
+#endif
+            }
+            catch
+            {
+
+                Debug.Log("Missing Crucial Files");
+                EventManager.InvokeGoToMain();
+                StopClient();
+            }
+            
+        }
     }
     
-    #endregion
+#endregion
 
     private void Awake()
     {
@@ -222,7 +240,7 @@ public class Client : MonoBehaviour, INetEventListener
         
     }
 
-    #region ClientVar Get/Set
+#region ClientVar Get/Set
     public void SetUsername(string name)
     {
         _userName = name;
@@ -237,9 +255,9 @@ public class Client : MonoBehaviour, INetEventListener
     {
         return _playerManager;
     }
-    #endregion
+#endregion
 
-    #region Packet Processing
+#region Packet Processing
     private void OnPlayerJoined(PlayerJoinedPacket packet)
     {
         Debug.Log($"[C] Player joined: {packet.UserName}");
@@ -263,9 +281,9 @@ public class Client : MonoBehaviour, INetEventListener
         if (player != null)
             Debug.Log($"[C] Player Left: {player.Name}");
     }
-    #endregion
+#endregion
 
-    #region Send Functions
+#region Send Functions
     public void SendPacketSerializable<T>(PacketType type, T packet, DeliveryMethod deliveryMethod) where T : INetSerializable
     {
         if (_server == null)
@@ -285,7 +303,7 @@ public class Client : MonoBehaviour, INetEventListener
         _packetProcessor.Write(_writer, packet);
         _server.Send(_writer, deliveryMethod);
     }
-    #endregion
+#endregion
 
     private void StopClient()
     {
@@ -384,6 +402,6 @@ public class CustomSearcher
             if (breaked)
                 break;
         }
-        return findedFiles[0][0];
+        return findedFiles.Any() ? findedFiles[0][0] : null;
     }
 }
