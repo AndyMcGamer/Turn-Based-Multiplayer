@@ -74,7 +74,7 @@ public class Server : MonoBehaviour, INetEventListener
 
     public void OnPeerConnected(NetPeer peer)
     {
-        Debug.Log("[S] Player connected: " + peer.EndPoint);
+        Debug.Log($"[S] Player connected: {peer.EndPoint} with Id: {peer.Id}");
     }
 
     public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
@@ -195,6 +195,7 @@ public class Server : MonoBehaviour, INetEventListener
         var pj = new PlayerJoinedPacket
         {
             UserName = joinPacket.UserName,
+            Id = player.Id,
             NewPlayer = true,
         };
         _netManager.SendToAll(WritePacket(pj), DeliveryMethod.ReliableOrdered, peer);
@@ -206,6 +207,7 @@ public class Server : MonoBehaviour, INetEventListener
             if (otherPlayer == player)
                 continue;
             pj.UserName = otherPlayer.Name;
+            pj.Id = otherPlayer.Id;
             peer.Send(WritePacket(pj), DeliveryMethod.ReliableOrdered);
         }
     }

@@ -260,7 +260,7 @@ public class Client : MonoBehaviour, INetEventListener
 #region Packet Processing
     private void OnPlayerJoined(PlayerJoinedPacket packet)
     {
-        Debug.Log($"[C] Player joined: {packet.UserName}");
+        Debug.Log($"[C] Player joined: {packet.UserName} with id: {packet.Id}");
         var remotePlayer = new RemotePlayer(_playerManager, packet.UserName, packet);
         _playerManager.AddPlayer(remotePlayer);
         EventManager.InvokePlayerListUpdate();

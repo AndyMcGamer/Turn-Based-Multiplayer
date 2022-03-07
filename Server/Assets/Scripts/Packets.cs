@@ -28,6 +28,7 @@ public class JoinAcceptPacket
 public class PlayerJoinedPacket
 {
     public string UserName { get; set; }
+    public byte Id { get; set; }
     public bool NewPlayer { get; set; }
 }
 
@@ -38,7 +39,4 @@ public class PlayerLeftPacket
 #endregion
 
 #region Manually-Serialized Packets
-
 #endregion
-
-
