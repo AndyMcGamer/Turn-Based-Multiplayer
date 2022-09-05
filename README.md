@@ -12,3 +12,5 @@ Supports:
 - Hosting a Peer-to-Peer lobby
 - Other Users Joining/Leaving
   - Lobby list reflecting realtime changes
+
+Link for itch.io page: https://andymcgamer.itch.io/lobbysystem-demo
